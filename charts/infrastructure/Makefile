@@ -1,11 +1,12 @@
 #CHART_REPO := http://jenkins-x-chartmuseum:8080
 CURRENT=$(pwd)
-NAME := application
+NAME := infrastructure
 OS := $(shell uname)
 RELEASE_VERSION := $(shell cat ../../VERSION)
 
 GITHUB_CHARTS_REPO := $(or $(GITHUB_CHARTS_REPO),$(shell git config --get remote.origin.url))
 GITHUB_CHARTS_BRANCH := $(or $(GITHUB_CHARTS_BRANCH),gh-pages)
+ORG := $(or $(ORG),activiti)
 
 build: clean
 	helm init --client-only
@@ -53,7 +54,7 @@ ifeq ($(OS),Darwin)
 	sed -i "" -e "s/tag: .*/tag: $(RELEASE_VERSION)/" values.yaml
 else ifeq ($(OS),Linux)
 	sed -i -e "s/version:.*/version: $(RELEASE_VERSION)/" Chart.yaml
-	sed -i -e "s|repository: .*|repository: $(DOCKER_REGISTRY)/activiti/activiti-cloud-application-chart|" values.yaml
+	sed -i -e "s|repository: .*|repository: $(DOCKER_REGISTRY)/$(ORG)/$(NAME)|" values.yaml
 	sed -i -e "s/tag: .*/tag: $(RELEASE_VERSION)/" values.yaml
 else  
 	echo "platfrom $(OS) not supported to release from"
