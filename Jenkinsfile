@@ -1,10 +1,13 @@
 pipeline {
     agent {
-      label "jenkins-maven"
+      label "jenkins-maven" 
     }
+    options {
+      disableConcurrentBuilds()
+    }  
     environment {
       ORG               = 'activiti'
-      APP_NAME          = 'infrastructure'
+      APP_NAME          = 'application'
       CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
       GITHUB_CHARTS_REPO    = "https://github.com/Activiti/activiti-cloud-helm-charts.git"
       GITHUB_HELM_REPO_URL = "https://activiti.github.io/activiti-cloud-helm-charts/"
@@ -21,9 +24,12 @@ pipeline {
           PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
           HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
         }
+        
         steps {
           container('maven') {
-           dir ("./charts/$(APP_NAME))") {
+           //check if all versions of activiti-cloud-dependencies are the same
+           sh 'make validate'
+           dir("./charts/$APP_NAME") {
 	          sh 'make build'
            }
           }
@@ -43,7 +49,7 @@ pipeline {
             // so we can retrieve the version in later steps
             sh "echo \$(jx-release-version) > VERSION"
 
-            dir ("./charts/$(APP_NAME)") {
+            dir("./charts/$APP_NAME") {
                 sh 'make tag'
                 sh 'make release'
                 sh 'make github'
@@ -57,7 +63,7 @@ pipeline {
           branch 'master'
         }
         steps {
-          dir ("./charts/$(APP_NAME)") {
+          dir("./charts/$APP_NAME") {
             container('maven') {
               sh 'jx step changelog --version v\$(cat ../../VERSION)'
               sh 'jx step git credentials'
